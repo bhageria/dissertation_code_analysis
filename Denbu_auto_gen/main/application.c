@@ -3,9 +3,10 @@
 void start_application()
 {
 	char temperature_val[50];
-	mqttData_str_t mqttData_e;
+	//mqttData_str_t mqttData_e;
 	uint16_t temperature;
 	install_temperature_snsr();
+	install_motion_snsr();
 	install_LED();
 	
 	while(1)
@@ -16,14 +17,27 @@ void start_application()
 			sprintf(temperature_val,"TEMPERATURE_THRESHOLD_CROSSED - %u",temperature);
 			set_LED(1);
 			mqttData_e.data = temperature_val;
-			xQueueSend(mqttData_Queue, &mqttData_e , (TickType_t)0 );
+			publish_data = 1;
 		}
 		else
 		{
 			sprintf(temperature_val,"TEMPERATURE_THRESHOLD_NOT_CROSSED - %u",temperature);
 			set_LED(0);
 			mqttData_e.data = temperature_val;
-			xQueueSend(mqttData_Queue, &mqttData_e , (TickType_t)0 );
+			publish_data = 1;
+			
+		}
+		if(motion_detected)
+		{
+			mqttData_e.data = "MOTION_DETECTED";
+			publish_data = 1;
+			set_LED(1);
+		}
+		if(button_detected)
+		{
+			mqttData_e.data = "BUTTON_DETECTED";
+			publish_data = 1;
+			set_LED(1);
 		}
 		 vTaskDelay(5000/ portTICK_PERIOD_MS);
 	}

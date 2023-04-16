@@ -28,11 +28,14 @@
 #define AWS_IOT_TASK_PRIORITY				6
 #define AWS_IOT_TASK_CORE_ID				1
 
+uint8_t publish_data;
+
 typedef struct mqttData_str
 {
     char *data;
 }mqttData_str_t;
 
+mqttData_str_t mqttData_e;
 
 
 #ifndef MAIN_TASKS_COMMON_H_

@@ -53,7 +53,7 @@ void aws_PublishToTopic();
 static TaskHandle_t task_aws_iot = NULL;
 AWS_IoT_Client client;
 
-mqttData_str_t mqttData_e;
+//mqttData_str_t mqttData_e;
 QueueHandle_t mqttData_Queue;
 
 /**
@@ -90,7 +90,7 @@ void iot_subscribe_callback_handler(AWS_IoT_Client *pClient, char *topicName, ui
             break;
         #ifdef motion_snsr_INSTALLED
         case 2:
-            printf("Message for motion sensor\n");
+            motion_detected = 0;
             break;
         #endif
         #ifdef LED_INSTALLED
@@ -258,13 +258,13 @@ void aws_PublishToTopic()
 {
     char *topic = "esp/data";
     IoT_Publish_Message_Params publishParams;
-    mqttData_str_t l_mqttData_e;
+    //mqttData_str_t l_mqttData_e;
     const int topic_len = strlen(topic);
     IoT_Error_t rc = FAILURE;
     //char cPayload[100];
     while(1)
     {
-        while(!xQueueReceive(mqttData_Queue,&l_mqttData_e,2000));
+        while(!publish_data);
         printf("*************************************Publishing new data***********************************\n");
         publishParams.qos = QOS1;
         publishParams.isRetained = 0;
@@ -274,6 +274,15 @@ void aws_PublishToTopic()
         publishParams.payloadLen = strlen(l_mqttData_e.data);
         rc = aws_iot_mqtt_publish(&client, topic, topic_len, &publishParams);
         printf(" RC value after publish = %d\n",rc);
+        publish_data = 0;
+        if(button_detected)
+        {
+            button_detected = 0;
+        }
+        if(motion_detected)
+        {
+            motion_detected = 0;
+        }
     }
     
 
