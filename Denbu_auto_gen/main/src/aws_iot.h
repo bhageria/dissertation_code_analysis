@@ -15,9 +15,9 @@
 #define CONFIG_AWS_EXAMPLE_CLIENT_ID "Udemy_ESP32_Test"
 #include "src/tasks_common.h"
 
-//#ifdef LED_INSTALLED
 #include "src/LED.h"
-//#endif
+#include "src/button.h"
+#include "src/motion_snsr.h"
 
 /**
  * @brief Default MQTT HOST URL is pulled from the aws_iot_config.h

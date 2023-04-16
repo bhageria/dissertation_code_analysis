@@ -88,12 +88,9 @@ void iot_subscribe_callback_handler(AWS_IoT_Client *pClient, char *topicName, ui
                 OTA_Update();
             }
             break;
-        #ifdef motion_snsr_INSTALLED
         case 2:
             motion_detected = 0;
             break;
-        #endif
-        #ifdef LED_INSTALLED
         case 3:
             printf("Message for LED\n");
             payload = cJSON_GetObjectItem(root,"payload");
@@ -111,7 +108,6 @@ void iot_subscribe_callback_handler(AWS_IoT_Client *pClient, char *topicName, ui
                 printf("Wrong message for LED\n");
             }
             break;
-        #endif
         default:
             printf("message is wrong");
             break;
