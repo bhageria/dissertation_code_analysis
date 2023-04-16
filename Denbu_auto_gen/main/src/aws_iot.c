@@ -45,7 +45,7 @@
 #include "cJSON.h"
 #include "src/OTA.h"
 #include "config.h"
-
+#include "../config.h"
 static const char *TAG = "aws_iot";
 void aws_SubscribeToTopic(AWS_IoT_Client *client, char *topic);
 void aws_PublishToTopic();
@@ -53,7 +53,7 @@ void aws_PublishToTopic();
 static TaskHandle_t task_aws_iot = NULL;
 AWS_IoT_Client client;
 
-//mqttData_str_t mqttData_e;
+mqttData_str_t mqttData_e;
 QueueHandle_t mqttData_Queue;
 
 /**
@@ -88,26 +88,34 @@ void iot_subscribe_callback_handler(AWS_IoT_Client *pClient, char *topicName, ui
                 OTA_Update();
             }
             break;
+        #ifdef motion_snsr_INSTALLED
         case 2:
-            motion_detected = 0;
+            printf("Message for motion sensor\n");
             break;
+        #endif
+        #ifdef LED_INSTALLED
         case 3:
             printf("Message for LED\n");
             payload = cJSON_GetObjectItem(root,"payload");
             printf("The payload is  = %s\n", payload->valuestring);
             if(strcmp(payload->valuestring,"LED_ON") == 0)
             {
-                set_LED(1);
+                str_LED_event_t msg;
+                msg.msg_id = LED_ON;
+                xQueueSend(q_LED_event,&msg,portMAX_DELAY);
             }
             else if(strcmp(payload->valuestring,"LED_OFF") == 0)
             {
-                set_LED(0);
+                str_LED_event_t msg;
+                msg.msg_id = LED_OFF;
+                xQueueSend(q_LED_event,&msg,portMAX_DELAY);
             }
             else
             {
                 printf("Wrong message for LED\n");
             }
             break;
+        #endif
         default:
             printf("message is wrong");
             break;
@@ -254,13 +262,13 @@ void aws_PublishToTopic()
 {
     char *topic = "esp/data";
     IoT_Publish_Message_Params publishParams;
-    //mqttData_str_t l_mqttData_e;
+    mqttData_str_t l_mqttData_e;
     const int topic_len = strlen(topic);
     IoT_Error_t rc = FAILURE;
     //char cPayload[100];
     while(1)
     {
-        while(!publish_data);
+        while(!xQueueReceive(mqttData_Queue,&l_mqttData_e,2000));
         printf("*************************************Publishing new data***********************************\n");
         publishParams.qos = QOS1;
         publishParams.isRetained = 0;
@@ -270,15 +278,6 @@ void aws_PublishToTopic()
         publishParams.payloadLen = strlen(l_mqttData_e.data);
         rc = aws_iot_mqtt_publish(&client, topic, topic_len, &publishParams);
         printf(" RC value after publish = %d\n",rc);
-        publish_data = 0;
-        if(button_detected)
-        {
-            button_detected = 0;
-        }
-        if(motion_detected)
-        {
-            motion_detected = 0;
-        }
     }
     
 

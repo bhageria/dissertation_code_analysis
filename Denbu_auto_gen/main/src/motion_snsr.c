@@ -28,6 +28,18 @@ void install_motion_snsr()
 
 void IRAM_ATTR motion_snsr_ISR()
 {
-    motion_detected = 1;
+    str_motion_snsr_event_t msg;
+    msg.msg_id = MOTION_DETECTED;
+    msg.data = "Motion Detected";
+    xQueueSend(q_motion_snsr_event, &msg , (TickType_t)0 );
 }
 
+/**
+ * @brief : Function to handle messages received over MQTT. 
+ * 
+ */
+void motion_snsr_mqtt_receive_handler()
+{
+    str_motion_snsr_event_t msg;
+    while(!xQueueReceive(q_motion_snsr_event,&msg,portMAX_DELAY));
+}

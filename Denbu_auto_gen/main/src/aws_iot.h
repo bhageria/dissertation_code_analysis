@@ -15,9 +15,9 @@
 #define CONFIG_AWS_EXAMPLE_CLIENT_ID "Udemy_ESP32_Test"
 #include "src/tasks_common.h"
 
+//#ifdef LED_INSTALLED
 #include "src/LED.h"
-#include "src/button.h"
-#include "src/motion_snsr.h"
+//#endif
 
 /**
  * @brief Default MQTT HOST URL is pulled from the aws_iot_config.h
@@ -28,14 +28,11 @@
 #define AWS_IOT_TASK_PRIORITY				6
 #define AWS_IOT_TASK_CORE_ID				1
 
-uint8_t publish_data;
-
 typedef struct mqttData_str
 {
     char *data;
 }mqttData_str_t;
 
-mqttData_str_t mqttData_e;
 
 
 #ifndef MAIN_TASKS_COMMON_H_

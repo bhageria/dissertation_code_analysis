@@ -2,43 +2,80 @@
 
 void start_application()
 {
-	char temperature_val[50];
-	//mqttData_str_t mqttData_e;
-	uint16_t temperature;
 	install_temperature_snsr();
-	install_motion_snsr();
 	install_LED();
-	
+	install_button();
+	install_motion_snsr();
+	xTaskCreate(temperature_snsr_event_Handler, "temperature_snsr_Handler", temperature_snsr_STACK_SIZE, NULL, temperature_snsr_PRIORITY, NULL);
+}
+
+void temperature_snsr_event_Handler()
+{
+	str_temperature_snsr_event_t temperature_snsr_msg;
+	str_LED_event_t LED_msg;
+	mqttData_str_t mqttData_e;
 	while(1)
 	{
-		temperature = read_tmpSnsr();
-		if(temperature > 2000)
+		while(!xQueueReceive(q_temperature_snsr_event,&temperature_snsr_msg,portMAX_DELAY));
+		switch(temperature_snsr_msg.msg_id)
 		{
-			sprintf(temperature_val,"TEMPERATURE_THRESHOLD_CROSSED - %u",temperature);
-			set_LED(1);
-			mqttData_e.data = temperature_val;
-			publish_data = 1;
+			case TEMPERATURE_THRESHOLD_CROSSED:
+				LED_msg.msg_id = LED_ON;
+				xQueueSend(q_LED_event, &LED_msg, (TickType_t)0 );
+				mqttData_str_t mqttData_e;
+				mqttData_e.data = temperature_snsr_msg.data;
+				xQueueSend(mqttData_Queue, &mqttData_e , (TickType_t)0 );
+				break;
+			case TEMPERATURE_THRESHOLD_NOT_CROSSED:
+				LED_msg.msg_id = LED_OFF;
+				xQueueSend(q_LED_event, &LED_msg, (TickType_t)0 );
+				mqttData_e.data = temperature_snsr_msg.data;
+				xQueueSend(mqttData_Queue, &mqttData_e , (TickType_t)0 );
+				break;
+			default:
+				break;
 		}
-		else
+	}
+}
+
+void motion_snsr_Handler()
+{
+	str_motion_snsr_event_t motion_snsr_msg;
+	mqttData_str_t mqttData_e;
+	while(1)
+	{
+		while(!xQueueReceive(q_motion_snsr_event,&motion_snsr_msg,portMAX_DELAY));
+		switch(motion_snsr_msg.msg_id)
 		{
-			sprintf(temperature_val,"TEMPERATURE_THRESHOLD_NOT_CROSSED - %u",temperature);
-			set_LED(0);
-			mqttData_e.data = temperature_val;
-			publish_data = 1;
-			
+			case MOTION_DETECTED:
+				LED_msg.msg_id = LED_ON;
+				xQueueSend(q_LED_event, &LED_msg, (TickType_t)0 );
+				mqttData_e.data = motion_snsr_msg.data;
+				xQueueSend(mqttData_Queue, &mqttData_e , (TickType_t)0 );
+				break;
+			default:
+				break;
 		}
-		if(motion_detected)
+	}
+}
+
+void button_Handler()
+{
+	str_button_event_t button_msg;
+	mqttData_str_t mqttData_e;
+	while(1)
+	{
+		while(!xQueueReceive(q_button_event,&button_msg,portMAX_DELAY));
+		switch(button_msg.msg_id)
 		{
-			mqttData_e.data = "MOTION_DETECTED";
-			publish_data = 1;
-			set_LED(1);
+			case BUTTON_DETECTED:
+				LED_msg.msg_id = LED_ON;
+				xQueueSend(q_LED_event, &LED_msg, (TickType_t)0 );
+				mqttData_e.data = button_msg.data;
+				xQueueSend(mqttData_Queue, &mqttData_e , (TickType_t)0 );
+				break;
+			default:
+				break;
 		}
-		if(button_detected)
-		{
-			mqttData_e.data = "BUTTON_DETECTED";
-			publish_data = 1;
-			set_LED(1);
-		}
-		 vTaskDelay(5000/ portTICK_PERIOD_MS);
 	}
 }
